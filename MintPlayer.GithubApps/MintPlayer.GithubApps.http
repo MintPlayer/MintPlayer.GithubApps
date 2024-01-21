@@ -1,0 +1,6 @@
+@MintPlayer.GithubApps_HostAddress = http://localhost:5086
+
+GET {{MintPlayer.GithubApps_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
