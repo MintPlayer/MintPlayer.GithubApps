@@ -1,5 +1,4 @@
-﻿using Microsoft.Net.Http.Headers;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Octokit;
 using Smee.IO.Client;
@@ -24,8 +23,6 @@ public class SmeeService : IHostedService
         await smeeClient.StartAsync(cancellationToken);
     }
 
-    //List<SmeeConnectedClient> clients = new List<SmeeConnectedClient>();
-
     private async void SmeeClient_OnMessage(object? sender, Smee.IO.Client.Dto.SmeeEvent e)
     {
         if (e.Event == SmeeEventType.Message)
@@ -38,13 +35,6 @@ public class SmeeService : IHostedService
                 var accessTokensUrl = msg["installation"]["access_tokens_url"];
                 var appId = msg["installation"]["app_id"];
                 var installationId = msg["installation"]["id"];
-
-                //clients.Add(new SmeeConnectedClient
-                //{
-                //    AppId = appId.Value<string>(),
-                //    AccessTokensUrl = accessTokensUrl.Value<string>(),
-                //    InstallationId = installationId.Value<long>(),
-                //});
             }
             
             if (action == "deleted")
@@ -60,24 +50,11 @@ public class SmeeService : IHostedService
 
                 var jwt = GetJwt(configuration["GithubApp:AppId"]!, configuration["GithubApp:PrivateKeyPath"]!);
 
-                //var httpclient = new HttpClient();
-                //var content = new StringContent("");
-                //content.Headers.Add(HeaderNames.Authorization, jwt);
-                //var response = await httpclient.PostAsync(accessTokensUrl.ToString(), content);
-                //var data = await response.Content.ReadAsStringAsync();
-                //var githubResponse = JsonConvert.DeserializeObject<GithubAuthResponse>(data);
-
                 var header = new ProductHeaderValue("Test", "0.0.1");
                 var ghclient = new GitHubClient(header)
                 {
                     Credentials = new Credentials(jwt, AuthenticationType.Bearer)
                 };
-
-                //var installations = await client.GitHubApps.GetAllInstallationsForCurrent();
-                //foreach (var i in installations)
-                //{
-                //    log.LogInformation($"installation: {i.Id} {i.HtmlUrl}");
-                //}
 
                 var response = await ghclient.GitHubApps.CreateInstallationToken(installationId);
                 var repoClient = new GitHubClient(header)
@@ -120,27 +97,4 @@ public class SmeeService : IHostedService
         var jwt = $"{header}.{payload}.{signature}";
         return jwt;
     }
-}
-
-class SmeeConnectedClient
-{
-    public string AppId { get; set; }
-    public string AccessTokensUrl { get; set; }
-    public long InstallationId { get; set; }
-}
-
-class GithubPermissions
-{
-    public string Issues { get; set; }
-    public string Metadata { get; set; }
-}
-
-class GithubAuthResponse
-{
-    public string? Token { get; set; }
-    [JsonProperty("expires_at")]
-    public DateTime ExpiresAt { get; set; }
-    public GithubPermissions? Permissions { get; set; }
-    [JsonProperty("repository_selection")]
-    public string? RepositorySelection { get; set; }
 }
