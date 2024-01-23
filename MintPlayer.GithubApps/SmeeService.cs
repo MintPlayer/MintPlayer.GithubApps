@@ -27,6 +27,32 @@ public class SmeeService : IHostedService
     {
         if (e.Event == SmeeEventType.Message)
         {
+            var signature = e.Data.Headers["x-hub-signature-256"];
+            var webhookSecret = configuration["GithubApp:WebhookSecret"];
+            if (!string.IsNullOrEmpty(webhookSecret))
+            {
+                var key = Encoding.UTF8.GetBytes(webhookSecret);
+                var rawBody = e.Data.Body.ToString();
+                using (var hmac = new HMACSHA256(key))
+                using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(rawBody ?? string.Empty)))
+                {
+                    var hash = await hmac.ComputeHashAsync(ms);
+                    var hashString = Convert.ToHexString(hash);
+                    if ($"sha256={hashString}" != signature)
+                    {
+                        return;
+                    }
+                }
+
+                //using (var sha256 = SHA256.Create())
+                //using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(webhookSecret)))
+                //{
+                //    var hash = await sha256.ComputeHashAsync(ms);
+                //    var hashString = Convert.ToHexString(hash);
+                //    if (hashString != signature) return;
+                //}
+            }
+
             var msg = (JObject)e.Data.Body;
 
             var action = msg["action"].Value<string>();
