@@ -8,14 +8,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <None Remove=".gitignore" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Compile Include=".gitignore" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<PackageReference Include="Octokit" Version="9.1.0" />
 		<PackageReference Include="Octokit.Webhooks.AspNetCore" Version="2.1.0" />
 		<PackageReference Include="Smee.IO.Client" Version="1.0.16" />
