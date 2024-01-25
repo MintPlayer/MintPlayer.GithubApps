@@ -40,14 +40,17 @@ public class SmeeService : IHostedService
             //        .Select(l => l.Trim(' ').Replace(": ", ":"))
             //);
 
-            using var ms = new MemoryStream();
-            using var writer = new Utf8JsonWriter(ms);
-            JsonDocument.Parse(rawBody!).WriteTo(writer);
+            //using var ms = new MemoryStream();
+            //using var writer = new Utf8JsonWriter(ms);
+            //JsonDocument.Parse(rawBody!).WriteTo(writer);
 
-            await writer.FlushAsync();
-            ms.Seek(0, SeekOrigin.Begin);
-            using var reader = new StreamReader(ms);
-            var jsonFormatted = await reader.ReadToEndAsync();
+            //await writer.FlushAsync();
+            //ms.Seek(0, SeekOrigin.Begin);
+            //using var reader = new StreamReader(ms);
+            //var jsonFormatted = await reader.ReadToEndAsync();
+
+            //var jsonFormatted = JsonDocument.Parse(rawBody!).RootElement.ToString();
+            var jsonFormatted = JsonConvert.SerializeObject(JsonConvert.DeserializeObject(rawBody));
 
             var signatureSha256 = e.Data.Headers["x-hub-signature-256"];
             var secret = configuration["GithubApp:WebhookSecret"];
