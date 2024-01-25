@@ -5,11 +5,17 @@ using Smee.IO.Client;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddHostedService<SmeeService>();
-builder.Services.AddSingleton<ISmeeClient>((provider) =>
+if (builder.Environment.IsDevelopment())
 {
-    return new SmeeClient(new Uri(builder.Configuration["GithubApp:WebhookProxyUrl"] ?? string.Empty));
-});
+    builder.Services.AddHostedService<SmeeService>();
+    builder.Services.AddSingleton<ISmeeClient>((provider) =>
+    {
+        return new SmeeClient(new Uri(builder.Configuration["GithubApp:WebhookProxyUrl"] ?? string.Empty));
+    });
+}
+
+builder.Services.AddScoped<IGithubService, GithubService>();
+builder.Services.AddTransient<ISignatureService, SignatureService>();
 
 var app = builder.Build();
 
