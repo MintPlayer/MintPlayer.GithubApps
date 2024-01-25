@@ -32,24 +32,7 @@ public class SmeeService : IHostedService
         if (e.Event == SmeeEventType.Message)
         {
 
-            var rawBody = e.Data.Body.ToString(); //.Replace("\r", string.Empty).Replace("\n", string.Empty);
-
-            //var trimmed = string.Join(
-            //    string.Empty,
-            //    rawBody.Split(Environment.NewLine)
-            //        .Select(l => l.Trim(' ').Replace(": ", ":"))
-            //);
-
-            //using var ms = new MemoryStream();
-            //using var writer = new Utf8JsonWriter(ms);
-            //JsonDocument.Parse(rawBody!).WriteTo(writer);
-
-            //await writer.FlushAsync();
-            //ms.Seek(0, SeekOrigin.Begin);
-            //using var reader = new StreamReader(ms);
-            //var jsonFormatted = await reader.ReadToEndAsync();
-
-            //var jsonFormatted = JsonDocument.Parse(rawBody!).RootElement.ToString();
+            var rawBody = e.Data.Body.ToString();
             var jsonFormatted = JsonConvert.SerializeObject(JsonConvert.DeserializeObject(rawBody));
 
             var signatureSha256 = e.Data.Headers["x-hub-signature-256"];
