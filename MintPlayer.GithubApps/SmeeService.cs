@@ -5,6 +5,7 @@ using Smee.IO.Client;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 
 namespace MintPlayer.GithubApps;
 
@@ -33,18 +34,27 @@ public class SmeeService : IHostedService
 
             var rawBody = e.Data.Body.ToString(); //.Replace("\r", string.Empty).Replace("\n", string.Empty);
 
-            var trimmed = string.Join(
-                string.Empty,
-                rawBody.Split(Environment.NewLine)
-                    .Select(l => l.Trim(' ').Replace(": ", ":"))
-            );
-                
+            //var trimmed = string.Join(
+            //    string.Empty,
+            //    rawBody.Split(Environment.NewLine)
+            //        .Select(l => l.Trim(' ').Replace(": ", ":"))
+            //);
+
+            using var ms = new MemoryStream();
+            using var writer = new Utf8JsonWriter(ms);
+            JsonDocument.Parse(rawBody!).WriteTo(writer);
+
+            await writer.FlushAsync();
+            ms.Seek(0, SeekOrigin.Begin);
+            using var reader = new StreamReader(ms);
+            var jsonFormatted = await reader.ReadToEndAsync();
+
             var signatureSha256 = e.Data.Headers["x-hub-signature-256"];
             var secret = configuration["GithubApp:WebhookSecret"];
             if (!string.IsNullOrEmpty(secret))
             {
                 var keyBytes = Encoding.UTF8.GetBytes(secret);
-                var bodyBytes = Encoding.UTF8.GetBytes(trimmed);
+                var bodyBytes = Encoding.UTF8.GetBytes(jsonFormatted);
 
                 var hash = HMACSHA256.HashData(keyBytes, bodyBytes);
                 var hashHex = Convert.ToHexString(hash);
