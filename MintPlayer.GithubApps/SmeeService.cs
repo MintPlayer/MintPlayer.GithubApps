@@ -2,8 +2,10 @@
 using Newtonsoft.Json.Linq;
 using Octokit;
 using Smee.IO.Client;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 
 namespace MintPlayer.GithubApps;
 
@@ -11,10 +13,14 @@ public class SmeeService : IHostedService
 {
     private readonly ISmeeClient smeeClient;
     private readonly IConfiguration configuration;
-    public SmeeService(ISmeeClient smeeClient, IConfiguration configuration)
+    private readonly IServiceProvider serviceProvider;
+    private readonly ISignatureService signatureService;
+    public SmeeService(ISmeeClient smeeClient, IConfiguration configuration, IServiceProvider serviceProvider, ISignatureService signatureService)
     {
         this.smeeClient = smeeClient;
         this.configuration = configuration;
+        this.serviceProvider = serviceProvider;
+        this.signatureService = signatureService;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -27,71 +33,55 @@ public class SmeeService : IHostedService
     {
         if (e.Event == SmeeEventType.Message)
         {
-            var signature = e.Data.Headers["x-hub-signature-256"];
-            var webhookSecret = configuration["GithubApp:WebhookSecret"];
-            if (!string.IsNullOrEmpty(webhookSecret))
-            {
-                var key = Encoding.UTF8.GetBytes(webhookSecret);
-                var rawBody = e.Data.Body.ToString();
-                using (var hmac = new HMACSHA256(key))
-                using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(rawBody ?? string.Empty)))
-                {
-                    var hash = await hmac.ComputeHashAsync(ms);
-                    var hashString = Convert.ToHexString(hash);
-                    if ($"sha256={hashString}" != signature)
-                    {
-                        return;
-                    }
-                }
-
-                //using (var sha256 = SHA256.Create())
-                //using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(webhookSecret)))
-                //{
-                //    var hash = await sha256.ComputeHashAsync(ms);
-                //    var hashString = Convert.ToHexString(hash);
-                //    if (hashString != signature) return;
-                //}
-            }
-
-            var msg = (JObject)e.Data.Body;
-
-            var action = msg["action"].Value<string>();
-            if (action == "created")
-            {
-                var accessTokensUrl = msg["installation"]["access_tokens_url"];
-                var appId = msg["installation"]["app_id"];
-                var installationId = msg["installation"]["id"];
-            }
+            using var scope = serviceProvider.CreateScope();
             
-            if (action == "deleted")
-            {
+            // Format JSON correctly
+            var jsonFormatted = await e.Data.GetFormattedJsonAsync();
+            var signatureSha256 = e.Data.Headers["x-hub-signature-256"];
+            var secret = configuration["GithubApp:WebhookSecret"];
 
-            }
+            var isValid = signatureService.VerifySignature(signatureSha256, secret, jsonFormatted);
+            if (!isValid) return;
 
-            if (action == "opened")
-            {
-                //var accessTokensUrl = msg["installation"]["access_tokens_url"];
-                //var appId = msg["installation"]["app_id"];
-                var installationId = msg["installation"]["id"].Value<long>();
+            //var msg = (JObject)e.Data.Body;
 
-                var jwt = GetJwt(configuration["GithubApp:AppId"]!, configuration["GithubApp:PrivateKeyPath"]!);
+            //var action = msg["action"].Value<string>();
+            //if (action == "created")
+            //{
+            //    var accessTokensUrl = msg["installation"]["access_tokens_url"];
+            //    var appId = msg["installation"]["app_id"];
+            //    var installationId = msg["installation"]["id"];
+            //}
 
-                var header = new ProductHeaderValue("Test", "0.0.1");
-                var ghclient = new GitHubClient(header)
-                {
-                    Credentials = new Credentials(jwt, AuthenticationType.Bearer)
-                };
+            //if (action == "deleted")
+            //{
 
-                var response = await ghclient.GitHubApps.CreateInstallationToken(installationId);
-                var repoClient = new GitHubClient(header)
-                {
-                    Credentials = new Credentials(response.Token)
-                };
+            //}
 
-                var repositoryId = msg["repository"]["id"].Value<long>();
-                var issueNumber = msg["issue"]["number"].Value<int>();
-                await repoClient.Issue.Comment.Create(repositoryId, issueNumber, "Thanks for creating an issue");
-            }
+            //if (action == "opened")
+            //{
+            //    //var accessTokensUrl = msg["installation"]["access_tokens_url"];
+            //    //var appId = msg["installation"]["app_id"];
+            //    var installationId = msg["installation"]["id"].Value<long>();
+
+            //    var jwt = GetJwt(configuration["GithubApp:AppId"]!, configuration["GithubApp:PrivateKeyPath"]!);
+
+            //    var header = new ProductHeaderValue("Test", "0.0.1");
+            //    var ghclient = new GitHubClient(header)
+            //    {
+            //        Credentials = new Credentials(jwt, AuthenticationType.Bearer)
+            //    };
+
+            //    var response = await ghclient.GitHubApps.CreateInstallationToken(installationId);
+            //    var repoClient = new GitHubClient(header)
+            //    {
+            //        Credentials = new Credentials(response.Token)
+            //    };
+
+            //    var repositoryId = msg["repository"]["id"].Value<long>();
+            //    var issueNumber = msg["issue"]["number"].Value<int>();
+            //    await repoClient.Issue.Comment.Create(repositoryId, issueNumber, "Thanks for creating an issue");
+            //}
         }
     }
 
