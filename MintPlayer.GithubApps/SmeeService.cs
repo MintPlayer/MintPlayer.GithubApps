@@ -41,45 +41,55 @@ public class SmeeService : IHostedService
                 return;
             }
 
-            var msg = (JObject)e.Data.Body;
-            var action = msg["action"].Value<string>();
-            switch (action)
+            using (var scope = serviceProvider.CreateScope())
             {
-                case "created":
-                    var accessTokensUrl = msg["installation"]["access_tokens_url"];
-                    var appId = msg["installation"]["app_id"];
-                    var installationId1 = msg["installation"]["id"];
-                    break;
+                var msgBody = (JObject)e.Data.Body;
+                var githubService = scope.ServiceProvider.GetRequiredService<IGithubService>();
+                await githubService.OnMessage(msgBody);
 
-                case "deleted":
-                    break;
+                var installationId = msgBody["installation"]["id"].Value<long>();
+                var repoClient = await GetAuthenticatedGithubClient(installationId);
 
-                case "opened":
-                    //var accessTokensUrl = msg["installation"]["access_tokens_url"];
-                    //var appId = msg["installation"]["app_id"];
-                    var installationId2 = msg["installation"]["id"].Value<long>();
+                var action = msgBody["action"].Value<string>();
+                switch (action)
+                {
+                    case "created":
+                        var accessTokensUrl = msgBody["installation"]["access_tokens_url"];
+                        var appId = msgBody["installation"]["app_id"];
+                        break;
 
-                    var jwt = GetJwt(configuration["GithubApp:AppId"]!, configuration["GithubApp:PrivateKeyPath"]!);
+                    case "deleted":
+                        break;
 
-                    var header = new ProductHeaderValue("Test", "0.0.1");
-                    var ghclient = new GitHubClient(header)
-                    {
-                        Credentials = new Credentials(jwt, AuthenticationType.Bearer)
-                    };
+                    case "opened":
+                        //var accessTokensUrl = msg["installation"]["access_tokens_url"];
+                        //var appId = msg["installation"]["app_id"];
 
-                    var response = await ghclient.GitHubApps.CreateInstallationToken(installationId2);
-                    var repoClient = new GitHubClient(header)
-                    {
-                        Credentials = new Credentials(response.Token)
-                    };
-
-                    var repositoryId = msg["repository"]["id"].Value<long>();
-                    var issueNumber = msg["issue"]["number"].Value<int>();
-                    await repoClient.Issue.Comment.Create(repositoryId, issueNumber, "Thanks for creating an issue");
-
-                    break;
+                        var repositoryId = msgBody["repository"]["id"].Value<long>();
+                        var issueNumber = msgBody["issue"]["number"].Value<int>();
+                        await githubService.OnIssueOpened(repositoryId, issueNumber, repoClient, msgBody);
+                        break;
+                }
             }
         }
+    }
+
+    private async Task<GitHubClient> GetAuthenticatedGithubClient(long installationId)
+    {
+        var jwt = GetJwt(configuration["GithubApp:AppId"]!, configuration["GithubApp:PrivateKeyPath"]!);
+
+        var header = new ProductHeaderValue("Test", "0.0.1");
+        var ghclient = new GitHubClient(header)
+        {
+            Credentials = new Credentials(jwt, AuthenticationType.Bearer)
+        };
+
+        var response = await ghclient.GitHubApps.CreateInstallationToken(installationId);
+        var repoClient = new GitHubClient(header)
+        {
+            Credentials = new Credentials(response.Token)
+        };
+        return repoClient;
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
