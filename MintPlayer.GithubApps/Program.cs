@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using MintPlayer.AspNetCore.BotFramework.Extensions;
 using MintPlayer.GithubApps;
 using Octokit.Webhooks.AspNetCore;
 using Smee.IO.Client;
@@ -16,7 +17,7 @@ if (builder.Environment.IsDevelopment())
 }
 
 builder.Services.AddScoped<IGithubService, GithubService>();
-builder.Services.AddTransient<ISignatureService, SignatureService>();
+builder.Services.AddBotFramework();
 
 var app = builder.Build();
 

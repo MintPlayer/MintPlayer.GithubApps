@@ -1,14 +1,10 @@
-﻿using System.Security.Cryptography;
+﻿using MintPlayer.AspNetCore.BotFramework.Abstractions;
+using System.Security.Cryptography;
 using System.Text;
 
-namespace MintPlayer.GithubApps;
+namespace MintPlayer.AspNetCore.BotFramework.Services;
 
-public interface ISignatureService
-{
-    bool VerifySignature(string signature, string? secret, string requestBody);
-}
-
-public class SignatureService : ISignatureService
+internal class SignatureService : ISignatureService
 {
     public bool VerifySignature(string signature, string? secret, string requestBody)
     {

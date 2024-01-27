@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using MintPlayer.AspNetCore.BotFramework;
+using MintPlayer.AspNetCore.BotFramework.Abstractions;
 
 namespace MintPlayer.GithubApps;
 
