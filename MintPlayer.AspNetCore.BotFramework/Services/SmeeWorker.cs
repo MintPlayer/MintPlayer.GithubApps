@@ -11,19 +11,20 @@ using MintPlayer.AspNetCore.BotFramework.Abstractions;
 using MintPlayer.AspNetCore.BotFramework.Services;
 using Octokit.Webhooks;
 using Octokit.Webhooks.Events;
+using Microsoft.Extensions.Options;
 
 namespace MintPlayer.GithubApps;
 
 internal class SmeeWorker : IHostedService
 {
     private readonly ISmeeClient smeeClient;
-    private readonly IConfiguration configuration;
+    private readonly IOptions<BotOptions> botOptions;
     private readonly IServiceProvider serviceProvider;
     private readonly ISignatureService signatureService;
-    public SmeeWorker(ISmeeClient smeeClient, IConfiguration configuration, IServiceProvider serviceProvider, ISignatureService signatureService)
+    public SmeeWorker(ISmeeClient smeeClient, IOptions<BotOptions> botOptions, IServiceProvider serviceProvider, ISignatureService signatureService)
     {
         this.smeeClient = smeeClient;
-        this.configuration = configuration;
+        this.botOptions = botOptions;
         this.serviceProvider = serviceProvider;
         this.signatureService = signatureService;
     }
@@ -40,7 +41,7 @@ internal class SmeeWorker : IHostedService
         {
             var jsonFormatted = e.Data.GetFormattedJson();
             var signatureSha256 = e.Data.Headers["x-hub-signature-256"];
-            var secret = configuration["GithubApp:WebhookSecret"];
+            var secret = botOptions.Value.WebhookSecret;
             if (!signatureService.VerifySignature(signatureSha256, secret, jsonFormatted))
             {
                 return;
@@ -48,41 +49,12 @@ internal class SmeeWorker : IHostedService
 
             using (var scope = serviceProvider.CreateScope())
             {
-                var msgBody = (JObject)e.Data.Body;
-                //var githubService = scope.ServiceProvider.GetRequiredService<IGithubService>();
-                //await githubService.OnMessage(msgBody);
-
-                var installationId = msgBody["installation"]["id"].Value<long>();
-                var githubService = scope.ServiceProvider.GetRequiredService<IAuthenticatedGithubService>();
-                var repoClient = await githubService.GetAuthenticatedGithubClient(installationId);
-
                 var processor = scope.ServiceProvider.GetRequiredService<WebhookEventProcessor>();
                 var json = System.Text.Json.JsonSerializer.Deserialize<IssuesEvent>(jsonFormatted);
                 await processor.ProcessWebhookAsync(
                     e.Data.Headers.ToDictionary(h => h.Key, h => new Microsoft.Extensions.Primitives.StringValues(h.Value)),
                     jsonFormatted
                 );
-
-                //var action = msgBody["action"].Value<string>();
-                //switch (action)
-                //{
-                //    case "created":
-                //        var accessTokensUrl = msgBody["installation"]["access_tokens_url"];
-                //        var appId = msgBody["installation"]["app_id"];
-                //        break;
-
-                //    case "deleted":
-                //        break;
-
-                //    case "opened":
-                //        //var accessTokensUrl = msg["installation"]["access_tokens_url"];
-                //        //var appId = msg["installation"]["app_id"];
-
-                //        var repositoryId = msgBody["repository"]["id"].Value<long>();
-                //        var issueNumber = msgBody["issue"]["number"].Value<int>();
-                //        await githubService.OnIssueOpened(repositoryId, issueNumber, repoClient, msgBody);
-                //        break;
-                //}
             }
         }
     }

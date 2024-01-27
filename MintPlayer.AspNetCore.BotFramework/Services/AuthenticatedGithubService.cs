@@ -6,7 +6,7 @@ using System.Text;
 
 namespace MintPlayer.AspNetCore.BotFramework.Services;
 
-public class AuthenticatedGithubService : IAuthenticatedGithubService
+public class AuthenticatedGithubService : Abstractions.IAuthenticatedGithubService
 {
     #region Constructor
     private readonly IOptions<BotOptions> botOptions;
@@ -16,7 +16,7 @@ public class AuthenticatedGithubService : IAuthenticatedGithubService
     }
     #endregion
         
-    public async Task<GitHubClient> GetAuthenticatedGithubClient(long installationId)
+    public async Task<IGitHubClient> GetAuthenticatedGithubClient(long installationId)
     {
         var jwt = GetJwt(botOptions.Value.AppId!, botOptions.Value.PrivateKeyPath!);
 

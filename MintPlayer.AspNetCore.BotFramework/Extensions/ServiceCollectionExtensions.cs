@@ -26,7 +26,7 @@ public static class ServiceCollectionExtensions
 
         return builder.Services
             .AddTransient<ISignatureService, SignatureService>()
-            .AddScoped<IAuthenticatedGithubService, AuthenticatedGithubService>()
+            .AddScoped<Abstractions.IAuthenticatedGithubService, AuthenticatedGithubService>()
             .AddScoped<WebhookEventProcessor, TWebhookEventProcessor>();
     }
 
