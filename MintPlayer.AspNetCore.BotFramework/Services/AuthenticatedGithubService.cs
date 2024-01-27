@@ -6,7 +6,7 @@ using System.Text;
 
 namespace MintPlayer.AspNetCore.BotFramework.Services;
 
-public class AuthenticatedGithubService : Abstractions.IAuthenticatedGithubService
+internal class AuthenticatedGithubService : Abstractions.IAuthenticatedGithubService
 {
     #region Constructor
     private readonly IOptions<BotOptions> botOptions;
