@@ -13,4 +13,8 @@
 		<PackageReference Include="Octokit.Webhooks.AspNetCore" Version="2.1.0" />
 		<PackageReference Include="Smee.IO.Client" Version="1.0.16" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\MintPlayer.AspNetCore.BotFramework\MintPlayer.AspNetCore.BotFramework.csproj" />
+	</ItemGroup>
 </Project>

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using MintPlayer.GithubApps;
+using Octokit.Webhooks.AspNetCore;
 using Smee.IO.Client;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,5 +22,6 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseHttpsRedirection();
+app.MapGitHubWebhooks(secret: builder.Configuration["GithubApp:WebhookSecret"]!);
 
 app.Run();
