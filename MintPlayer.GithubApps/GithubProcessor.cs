@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.Primitives;
+﻿using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
+using MintPlayer.AspNetCore.BotFramework;
 using MintPlayer.AspNetCore.BotFramework.Abstractions;
 using Octokit.Webhooks;
 using Octokit.Webhooks.Events;
@@ -10,9 +13,13 @@ public class GithubProcessor : WebhookEventProcessor
 {
     #region Constructor
     private readonly IAuthenticatedGithubService authenticatedGithubService;
-    public GithubProcessor(IAuthenticatedGithubService authenticatedGithubService)
+    private readonly ISignatureService signatureService;
+    private readonly IOptions<BotOptions> botOptions;
+    public GithubProcessor(IAuthenticatedGithubService authenticatedGithubService, ISignatureService signatureService, IOptions<BotOptions> botOptions)
     {
         this.authenticatedGithubService = authenticatedGithubService;
+        this.signatureService = signatureService;
+        this.botOptions = botOptions;
     }
     #endregion
 
@@ -24,6 +31,14 @@ public class GithubProcessor : WebhookEventProcessor
 
         var caseInsensitiveHeaders = new Dictionary<string, StringValues>(headers, StringComparer.OrdinalIgnoreCase);
         var webhookHeaders = WebhookHeaders.Parse(caseInsensitiveHeaders);
+
+        // Additionally, this is the perfect place to verify the signature against the secret
+        caseInsensitiveHeaders.TryGetValue("X-Hub-Signature-256", out var signatureSha256);
+        if (!signatureService.VerifySignature(signatureSha256, botOptions.Value.WebhookSecret, body))
+        {
+            return;
+        }
+
         var webhookEvent = this.DeserializeWebhookEvent(webhookHeaders, body);
         await ProcessWebhookAsync(webhookHeaders, webhookEvent);
     }

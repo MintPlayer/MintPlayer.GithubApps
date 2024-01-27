@@ -18,15 +18,11 @@ namespace MintPlayer.GithubApps;
 internal class SmeeWorker : IHostedService
 {
     private readonly ISmeeClient smeeClient;
-    private readonly IOptions<BotOptions> botOptions;
     private readonly IServiceProvider serviceProvider;
-    private readonly ISignatureService signatureService;
-    public SmeeWorker(ISmeeClient smeeClient, IOptions<BotOptions> botOptions, IServiceProvider serviceProvider, ISignatureService signatureService)
+    public SmeeWorker(ISmeeClient smeeClient, IServiceProvider serviceProvider)
     {
         this.smeeClient = smeeClient;
-        this.botOptions = botOptions;
         this.serviceProvider = serviceProvider;
-        this.signatureService = signatureService;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -40,13 +36,6 @@ internal class SmeeWorker : IHostedService
         if (e.Event == SmeeEventType.Message)
         {
             var jsonFormatted = e.Data.GetFormattedJson();
-            var signatureSha256 = e.Data.Headers["x-hub-signature-256"];
-            var secret = botOptions.Value.WebhookSecret;
-            if (!signatureService.VerifySignature(signatureSha256, secret, jsonFormatted))
-            {
-                return;
-            }
-
             using (var scope = serviceProvider.CreateScope())
             {
                 var processor = scope.ServiceProvider.GetRequiredService<WebhookEventProcessor>();
