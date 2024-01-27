@@ -17,7 +17,7 @@ builder.Services.Configure<BotOptions>(options =>
 });
 
 // Add services to the container.
-builder.Services.AddScoped<IGithubService, GithubService>();
+//builder.Services.AddScoped<IGithubService, GithubService>();
 builder.AddBotFramework<GithubProcessor>();
 
 var app = builder.Build();
