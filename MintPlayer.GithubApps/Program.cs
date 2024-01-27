@@ -1,25 +1,29 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using MintPlayer.AspNetCore.BotFramework;
+using MintPlayer.AspNetCore.BotFramework.Extensions;
 using MintPlayer.GithubApps;
+using Octokit.Webhooks.AspNetCore;
 using Smee.IO.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-if (builder.Environment.IsDevelopment())
+builder.Services.Configure<BotOptions>(options =>
 {
-    builder.Services.AddHostedService<SmeeService>();
-    builder.Services.AddSingleton<ISmeeClient>((provider) =>
-    {
-        return new SmeeClient(new Uri(builder.Configuration["GithubApp:WebhookProxyUrl"] ?? string.Empty));
-    });
-}
+    options.AppId = builder.Configuration["GithubApp:AppId"];
+    options.WebhookUrl = builder.Configuration["GithubApp:WebhookUrl"];
+    options.WebhookSecret = builder.Configuration["GithubApp:WebhookSecret"];
+    options.PrivateKeyPath = builder.Configuration["GithubApp:PrivateKeyPath"];
+});
 
-builder.Services.AddScoped<IGithubService, GithubService>();
-builder.Services.AddTransient<ISignatureService, SignatureService>();
+// Add services to the container.
+//builder.Services.AddScoped<IGithubService, GithubService>();
+builder.AddBotFramework<GithubProcessor>();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseHttpsRedirection();
+app.MapBotFramework();
 
 app.Run();
