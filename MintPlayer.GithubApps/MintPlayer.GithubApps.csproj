@@ -20,4 +20,10 @@
 	<ItemGroup>
 		<ProjectReference Include="..\MintPlayer.AspNetCore.BotFramework\MintPlayer.AspNetCore.BotFramework.csproj" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="**/*.private-key.pem">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
 </Project>

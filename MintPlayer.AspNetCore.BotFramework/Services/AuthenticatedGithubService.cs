@@ -44,13 +44,15 @@ internal class AuthenticatedGithubService : Abstractions.IAuthenticatedGithubSer
 
         var payload = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
         {
-            iat = DateTimeOffset.UtcNow.AddSeconds(-10).ToUnixTimeSeconds(),
-            exp = DateTimeOffset.UtcNow.AddMinutes(10).ToUnixTimeSeconds(),
+            iat = DateTimeOffset.UtcNow.AddSeconds(-1).ToUnixTimeSeconds(),
+            exp = DateTimeOffset.UtcNow.AddMinutes(9).ToUnixTimeSeconds(),
             iss = appId,
         })));
 
+        var absolutePemPath = Path.Combine(Directory.GetCurrentDirectory(), privateKeyPath);
+
         var rsa = RSA.Create();
-        rsa.ImportFromPem(File.ReadAllText(privateKeyPath));
+        rsa.ImportFromPem(File.ReadAllText(absolutePemPath));
 
         var signature = Convert.ToBase64String(rsa.SignData(Encoding.UTF8.GetBytes($"{header}.{payload}"), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
         var jwt = $"{header}.{payload}.{signature}";
