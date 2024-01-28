@@ -9,6 +9,10 @@ using Octokit.Webhooks.Events.Issues;
 
 namespace MintPlayer.GithubApps;
 
+// In your Github App, you should set the webhook-url to
+// https://example.com/api/github/webhooks
+// When this website is deployed.
+
 public class GithubProcessor : BaseWebhookProcessor
 {
     #region Constructor
