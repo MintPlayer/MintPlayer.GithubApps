@@ -74,3 +74,12 @@ jobs:
         uses: MintPlayer/github-actions/delay@v3
         with:
           milliseconds: 5000
+
+      - name: Delete app_offline.htm
+        uses: StephanThierry/ftp-delete-action@v2.1
+        with:
+          host: mintplayer.com
+          user: ${{ secrets.PUBLISH_FTP_USER }}
+          password: ${{ secrets.PUBLISH_FTP_PWD }}
+          remoteFiles: app_offline.htm
+          ignoreSSL: 1
