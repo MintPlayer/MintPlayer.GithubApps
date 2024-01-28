@@ -67,7 +67,7 @@ jobs:
           server: mintplayer.com
           username: ${{ secrets.PUBLISH_FTP_USER }}
           password: ${{ secrets.PUBLISH_FTP_PWD }}
-          local-dir: ./MintPlayer.GithubApps/bin/Release/net8.0/publish
+          local-dir: ./MintPlayer.GithubApps/bin/Release/net8.0/publish/
           server-dir: ./
 
       - name: Wait 5 seconds
