@@ -13,14 +13,10 @@ public class GithubProcessor : BaseWebhookProcessor
 {
     #region Constructor
     private readonly IAuthenticatedGithubService authenticatedGithubService;
-    private readonly ISignatureService signatureService;
-    private readonly IOptions<BotOptions> botOptions;
     public GithubProcessor(IAuthenticatedGithubService authenticatedGithubService, ISignatureService signatureService, IOptions<BotOptions> botOptions)
-        : base (signatureService, botOptions)
+        : base(signatureService, botOptions)
     {
         this.authenticatedGithubService = authenticatedGithubService;
-        this.signatureService = signatureService;
-        this.botOptions = botOptions;
     }
     #endregion
 

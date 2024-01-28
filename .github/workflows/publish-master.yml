@@ -1,0 +1,28 @@
+name: dotnet-deploy
+
+on:
+    push:
+        branches:
+            - 'master'
+
+jobs:
+    build:
+        name: dotnet-deploy
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Create app_offline.htm
+              shell: bash
+              run: |
+                mkdir tmp
+                echo "" > tmp/app_offline.htm
+                
+            - name: Upload app_offline.htm
+              uses: SamKirkland/FTP-Deploy-Action@v4
+              with:
+                server: mintplayer.com
+                username: ${{ secrets.PUBLISH_FTP_USER }}
+                password: ${{ secrets.PUBLISH_FTP_PWD }}
+                local-dir: ./tmp/
+                server-dir: ./
+                
