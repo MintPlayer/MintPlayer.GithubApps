@@ -55,8 +55,8 @@ jobs:
           password: ${{ secrets.PUBLISH_FTP_PWD }}
           local-dir: ./tmp/
           server-dir: ./
-          # exclude: |
-          #   !*
+          exclude: |
+            !**
 
       # - name: Wait 5 seconds
       #   uses: MintPlayer/github-actions/delay@v3
