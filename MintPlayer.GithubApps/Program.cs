@@ -20,10 +20,17 @@ builder.Services.Configure<BotOptions>(options =>
 // Add services to the container.
 //builder.Services.AddScoped<IGithubService, GithubService>();
 builder.AddBotFramework<GithubProcessor>();
+builder.Services.AddHttpLogging(options =>
+{
+    options.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All;
+    options.RequestBodyLogLimit = 16384;
+    options.ResponseBodyLogLimit = 16384;
+});
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+app.UseHttpLogging();
 app.UseHttpsRedirection();
 app.MapGet("/test/{number:int}", (int number) => $"Hello world {number}");
 app.MapBotFramework();
