@@ -18,7 +18,7 @@ jobs:
                 echo "" > tmp/app_offline.htm
                 
             - name: Upload app_offline.htm
-              uses: SamKirkland/FTP-Deploy-Action@v4
+              uses: SamKirkland/FTP-Deploy-Action@v4.3.4
               with:
                 server: mintplayer.com
                 username: ${{ secrets.PUBLISH_FTP_USER }}
