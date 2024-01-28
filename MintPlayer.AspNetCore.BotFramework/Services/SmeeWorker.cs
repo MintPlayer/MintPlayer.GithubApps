@@ -25,10 +25,13 @@ internal class SmeeWorker : IHostedService
         this.serviceProvider = serviceProvider;
     }
 
-    public async Task StartAsync(CancellationToken cancellationToken)
+    public Task StartAsync(CancellationToken cancellationToken)
     {
         smeeClient.OnMessage += SmeeClient_OnMessage;
-        await smeeClient.StartAsync(cancellationToken);
+
+        // StartAsync is actually a blocking call
+        smeeClient.StartAsync(cancellationToken).ContinueWith(delegate { }, TaskContinuationOptions.OnlyOnFaulted);
+        return Task.CompletedTask;
     }
 
     private async void SmeeClient_OnMessage(object? sender, Smee.IO.Client.Dto.SmeeEvent e)
