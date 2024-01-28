@@ -57,7 +57,7 @@ jobs:
           server-dir: ./
 
       - name: Wait 5 seconds
-        uses: MintPlayer/github-actions/delay
+        uses: MintPlayer/github-actions/delay@v3
         with:
           milliseconds: 5000
 
