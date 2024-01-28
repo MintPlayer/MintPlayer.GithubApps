@@ -58,31 +58,33 @@ jobs:
           exclude: |
             !**
 
-      # - name: Wait 5 seconds
-      #   uses: MintPlayer/github-actions/delay@v3
-      #   with:
-      #     milliseconds: 5000
+      - name: Wait 5 seconds
+        uses: MintPlayer/github-actions/delay@v3
+        with:
+          milliseconds: 5000
 
-      # - name: Upload application
-      #   uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-      #   with:
-      #     server: mintplayer.com
-      #     username: ${{ secrets.PUBLISH_FTP_USER }}
-      #     password: ${{ secrets.PUBLISH_FTP_PWD }}
-      #     local-dir: ./MintPlayer.GithubApps/bin/Release/net8.0/publish/
-      #     server-dir: ./
-      #     exclude: 
+      - name: Upload application
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: mintplayer.com
+          username: ${{ secrets.PUBLISH_FTP_USER }}
+          password: ${{ secrets.PUBLISH_FTP_PWD }}
+          local-dir: ./MintPlayer.GithubApps/bin/Release/net8.0/publish/
+          server-dir: ./
+          exclude: |
+            app_offline.htm
+            appsettings.*.json
 
-      # - name: Wait 5 seconds
-      #   uses: MintPlayer/github-actions/delay@v3
-      #   with:
-      #     milliseconds: 5000
+      - name: Wait 5 seconds
+        uses: MintPlayer/github-actions/delay@v3
+        with:
+          milliseconds: 5000
 
-      # - name: Delete app_offline.htm
-      #   uses: StephanThierry/ftp-delete-action@v2.1
-      #   with:
-      #     host: mintplayer.com
-      #     user: ${{ secrets.PUBLISH_FTP_USER }}
-      #     password: ${{ secrets.PUBLISH_FTP_PWD }}
-      #     remoteFiles: app_offline.htm
-      #     ignoreSSL: 1
+      - name: Delete app_offline.htm
+        uses: StephanThierry/ftp-delete-action@v2.1
+        with:
+          host: mintplayer.com
+          user: ${{ secrets.PUBLISH_FTP_USER }}
+          password: ${{ secrets.PUBLISH_FTP_PWD }}
+          remoteFiles: app_offline.htm
+          ignoreSSL: 1
