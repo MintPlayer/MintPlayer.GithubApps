@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MintPlayer.AspNetCore.BotFramework;
@@ -24,6 +25,7 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseHttpsRedirection();
+app.MapGet("/test/{number:int}", (int number) => $"Hello world {number}");
 app.MapBotFramework();
 
 app.Run();
