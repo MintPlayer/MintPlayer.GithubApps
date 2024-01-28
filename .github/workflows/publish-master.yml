@@ -1,28 +1,76 @@
 name: dotnet-deploy
 
 on:
-    push:
-        branches:
-            - 'master'
+  push:
+    branches:
+      - 'master'
 
 jobs:
-    build:
-        name: dotnet-deploy
-        runs-on: ubuntu-latest
+  build:
+    name: dotnet-deploy
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Create app_offline.htm
-              shell: bash
-              run: |
-                mkdir tmp
-                echo "" > tmp/app_offline.htm
-                
-            - name: Upload app_offline.htm
-              uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-              with:
-                server: mintplayer.com
-                username: ${{ secrets.PUBLISH_FTP_USER }}
-                password: ${{ secrets.PUBLISH_FTP_PWD }}
-                local-dir: ./tmp/
-                server-dir: ./
-                
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.101
+          # Authenticates packages to push to GPR
+          source-url: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+        env:
+          NUGET_AUTH_TOKEN: '%NUGET_AUTH_TOKEN%'
+
+      - name: Install dependencies
+        run: dotnet restore
+        env:
+          NUGET_AUTH_TOKEN: ${{ github.token }}
+          
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+        
+      - name: Test
+        run: dotnet test --no-restore --verbosity normal
+        
+      - name: Pack
+        run: dotnet pack --no-build --configuration Release
+        
+      - name: Publish web app
+        run: dotnet publish --no-build --configuration Release
+      
+      - name: Create app_offline.htm
+        shell: bash
+        run: |
+          mkdir tmp
+          echo "" > tmp/app_offline.htm
+
+      - name: Upload app_offline.htm
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: mintplayer.com
+          username: ${{ secrets.PUBLISH_FTP_USER }}
+          password: ${{ secrets.PUBLISH_FTP_PWD }}
+          local-dir: ./tmp/
+          server-dir: ./
+
+      - name: Wait 5 seconds
+        uses: MintPlayer/github-actions/delay
+        with:
+          milliseconds: 5000
+
+      - name: Upload application
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: mintplayer.com
+          username: ${{ secrets.PUBLISH_FTP_USER }}
+          password: ${{ secrets.PUBLISH_FTP_PWD }}
+          local-dir: ./MintPlayer.GithubApps/bin/Release/net8.0/publish
+          server-dir: ./
+
+      - name: Wait 5 seconds
+        uses: MintPlayer/github-actions/delay
+        with:
+          milliseconds: 5000

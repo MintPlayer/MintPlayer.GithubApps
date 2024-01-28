@@ -5,10 +5,11 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<InvariantGlobalization>true</InvariantGlobalization>
+		<IsPackable>false</IsPackable>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Remove="GithubService.cs" />
+		<Compile Remove="GithubService.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -17,6 +18,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\MintPlayer.AspNetCore.BotFramework\MintPlayer.AspNetCore.BotFramework.csproj" />
+		<ProjectReference Include="..\MintPlayer.AspNetCore.BotFramework\MintPlayer.AspNetCore.BotFramework.csproj" />
 	</ItemGroup>
 </Project>
