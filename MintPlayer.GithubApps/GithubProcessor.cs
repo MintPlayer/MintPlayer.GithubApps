@@ -46,7 +46,7 @@ public class GithubProcessor : BaseWebhookProcessor
                 {
                     // Here we should be able to cherry-pick the mergeCommit into the releaseBranch
                     var c = new Octokit.NewCommit("", "");
-                    //c.Context = ;
+                    //c.Contents = ;
                     //client.Git.Commit.Create(, )
                 }
             }
