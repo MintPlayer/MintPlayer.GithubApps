@@ -6,6 +6,7 @@ using MintPlayer.AspNetCore.BotFramework.Abstractions;
 using Octokit.Webhooks;
 using Octokit.Webhooks.Events;
 using Octokit.Webhooks.Events.Issues;
+using Octokit.Webhooks.Events.PullRequest;
 
 namespace MintPlayer.GithubApps;
 
@@ -28,5 +29,24 @@ public class GithubProcessor : BaseWebhookProcessor
     {
         var gitHubClient = await authenticatedGithubService.GetAuthenticatedGithubClient(issuesEvent.Installation!.Id);
         await gitHubClient.Issue.Comment.Create(issuesEvent.Repository.Id, (int)issuesEvent.Issue.Number, "Thanks for creating an issue");
+    }
+
+    protected override async Task ProcessPullRequestWebhookAsync(WebhookHeaders headers, PullRequestEvent pullRequestEvent, PullRequestAction action)
+    {
+        if (pullRequestEvent is PullRequestClosedEvent ev)
+        {
+            var client = await authenticatedGithubService.GetAuthenticatedGithubClient(ev.Installation!.Id);
+            var mergeCommit = await client.Git.Commit.Get(ev.Repository!.Id, ev.PullRequest.MergeCommitSha);
+
+            //await client.Git.Reference.Update(0, "master", new Octokit.ReferenceUpdate())
+            foreach (var label in ev.PullRequest.Labels)
+            {
+                var releaseBranch = await client.Repository.Branch.Get(ev.Repository!.Id, label.Name);
+                if (releaseBranch != null)
+                {
+                    // Here we should be able to cherry-pick the mergeCommit into the releaseBranch
+                }
+            }
+        }
     }
 }
