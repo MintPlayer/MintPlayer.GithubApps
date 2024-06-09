@@ -36,12 +36,14 @@ builder.Services.AddHttpLogging(options =>
     options.RequestBodyLogLimit = 16384;
     options.ResponseBodyLogLimit = 16384;
 });
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseHttpLogging();
 app.UseHttpsRedirection();
+app.MapHealthChecks("/healthz");
 app.MapGet("/test/{number:int}", (int number) => $"Hello world {number}");
 app.MapBotFramework();
 
