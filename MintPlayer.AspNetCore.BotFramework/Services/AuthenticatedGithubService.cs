@@ -24,7 +24,7 @@ internal class AuthenticatedGithubService : Abstractions.IAuthenticatedGithubSer
             privateKey = ReadPrivateKey(botOptions.Value.PrivateKeyPath!);
         }
 
-        var jwt = GetJwt(botOptions.Value.AppId!, privateKey);
+        var jwt = GetJwt(botOptions.Value.ClientId!, privateKey);
 
         var header = new ProductHeaderValue("Test", "0.0.1");
         var ghclient = new GitHubClient(header)
@@ -47,7 +47,7 @@ internal class AuthenticatedGithubService : Abstractions.IAuthenticatedGithubSer
         return privateKey;
     }
 
-    private string GetJwt(string appId, string privateKey)
+    private string GetJwt(string clientId, string privateKey)
     {
         var header = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
         {
@@ -59,7 +59,8 @@ internal class AuthenticatedGithubService : Abstractions.IAuthenticatedGithubSer
         {
             iat = DateTimeOffset.UtcNow.AddSeconds(-1).ToUnixTimeSeconds(),
             exp = DateTimeOffset.UtcNow.AddMinutes(9).ToUnixTimeSeconds(),
-            iss = appId,
+            //iss = appId,
+            iss = clientId
         })));
 
         var rsa = RSA.Create();
