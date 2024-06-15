@@ -42,7 +42,7 @@ internal class SmeeWorker : IHostedService
             using (var scope = serviceProvider.CreateScope())
             {
                 var processor = scope.ServiceProvider.GetRequiredService<WebhookEventProcessor>();
-                var json = System.Text.Json.JsonSerializer.Deserialize<IssuesEvent>(jsonFormatted);
+                //var json = System.Text.Json.JsonSerializer.Deserialize<IssuesEvent>(jsonFormatted);
                 await processor.ProcessWebhookAsync(
                     e.Data.Headers.ToDictionary(h => h.Key, h => new Microsoft.Extensions.Primitives.StringValues(h.Value)),
                     jsonFormatted

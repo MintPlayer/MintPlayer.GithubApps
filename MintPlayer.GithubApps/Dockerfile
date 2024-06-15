@@ -23,4 +23,6 @@ RUN dotnet publish "./MintPlayer.GithubApps.csproj" -c $BUILD_CONFIGURATION -o /
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+RUN mkdir /app/Logs
+RUN chown -R app /app/Logs
 ENTRYPOINT ["dotnet", "MintPlayer.GithubApps.dll"]
