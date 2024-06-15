@@ -16,6 +16,7 @@ builder.Services
         options.AppId = builder.Configuration["GithubApp:AppId"];
         options.WebhookUrl = builder.Configuration["GithubApp:WebhookUrl"];
         options.WebhookSecret = builder.Configuration["GithubApp:WebhookSecret"];
+        options.PrivateKey = builder.Configuration["GithubApp:PrivateKey"];
         options.PrivateKeyPath = builder.Configuration["GithubApp:PrivateKeyPath"];
     })
     .Configure<FileLoggerOptions>(options =>

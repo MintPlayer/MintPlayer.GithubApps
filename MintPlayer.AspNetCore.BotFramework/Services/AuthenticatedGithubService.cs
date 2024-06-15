@@ -18,7 +18,13 @@ internal class AuthenticatedGithubService : Abstractions.IAuthenticatedGithubSer
         
     public async Task<IGitHubClient> GetAuthenticatedGithubClient(long installationId)
     {
-        var jwt = GetJwt(botOptions.Value.AppId!, botOptions.Value.PrivateKeyPath!);
+        var privateKey = botOptions.Value.PrivateKey;
+        if (string.IsNullOrEmpty(privateKey))
+        {
+            privateKey = ReadPrivateKey(botOptions.Value.PrivateKeyPath!);
+        }
+
+        var jwt = GetJwt(botOptions.Value.AppId!, privateKey);
 
         var header = new ProductHeaderValue("Test", "0.0.1");
         var ghclient = new GitHubClient(header)
@@ -34,7 +40,14 @@ internal class AuthenticatedGithubService : Abstractions.IAuthenticatedGithubSer
         return repoClient;
     }
 
-    private string GetJwt(string appId, string privateKeyPath)
+    private string ReadPrivateKey(string privateKeyPath)
+    {
+        var absolutePemPath = Path.Combine(Directory.GetCurrentDirectory(), privateKeyPath);
+        var privateKey = File.ReadAllText(absolutePemPath);
+        return privateKey;
+    }
+
+    private string GetJwt(string appId, string privateKey)
     {
         var header = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
         {
@@ -49,10 +62,8 @@ internal class AuthenticatedGithubService : Abstractions.IAuthenticatedGithubSer
             iss = appId,
         })));
 
-        var absolutePemPath = Path.Combine(Directory.GetCurrentDirectory(), privateKeyPath);
-
         var rsa = RSA.Create();
-        rsa.ImportFromPem(File.ReadAllText(absolutePemPath));
+        rsa.ImportFromPem(privateKey);
 
         var signature = Convert.ToBase64String(rsa.SignData(Encoding.UTF8.GetBytes($"{header}.{payload}"), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
         var jwt = $"{header}.{payload}.{signature}";
