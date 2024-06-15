@@ -10,6 +10,8 @@ using Smee.IO.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.AddEnvironmentVariables();
+
 builder.Services
     .Configure<BotOptions>(options =>
     {
