@@ -14,7 +14,7 @@ namespace MintPlayer.GithubApps;
 
 // In your Github App, you should set the webhook-url to
 // https://example.com/api/github/webhooks
-// https://cherry-picker.mintplayer.com/api/github/webhooks
+// https://issue-greeter.mintplayer.com/api/github/webhooks
 // When this website is deployed.
 
 public class GithubProcessor : BaseWebhookProcessor
@@ -32,6 +32,21 @@ public class GithubProcessor : BaseWebhookProcessor
     {
         var gitHubClient = await authenticatedGithubService.GetAuthenticatedGithubClient(issuesEvent.Installation!.Id);
         await gitHubClient.Issue.Comment.Create(issuesEvent.Repository.Id, (int)issuesEvent.Issue.Number, "Thanks for creating an issue");
+    }
+
+    public override Task ProcessWebhookAsync(IDictionary<string, StringValues> headers, string body)
+    {
+        return base.ProcessWebhookAsync(headers, body);
+    }
+
+    public override Task ProcessWebhookAsync(WebhookHeaders headers, WebhookEvent webhookEvent)
+    {
+        return base.ProcessWebhookAsync(headers, webhookEvent);
+    }
+
+    protected override Task ProcessPushWebhookAsync(WebhookHeaders headers, PushEvent pushEvent)
+    {
+        return base.ProcessPushWebhookAsync(headers, pushEvent);
     }
 
     // protected override async Task ProcessPullRequestWebhookAsync(WebhookHeaders headers, PullRequestEvent pullRequestEvent, PullRequestAction action)
