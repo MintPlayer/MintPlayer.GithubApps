@@ -21,10 +21,14 @@ public class GithubProcessor : BaseWebhookProcessor
 {
     #region Constructor
     private readonly IAuthenticatedGithubService authenticatedGithubService;
-    public GithubProcessor(IAuthenticatedGithubService authenticatedGithubService, ISignatureService signatureService, IOptions<BotOptions> botOptions)
+    private readonly IHostEnvironment environment;
+    private readonly IServiceProvider serviceProvider;
+    public GithubProcessor(IAuthenticatedGithubService authenticatedGithubService, ISignatureService signatureService, IOptions<BotOptions> botOptions, IHostEnvironment environment, IServiceProvider serviceProvider)
         : base(signatureService, botOptions)
     {
         this.authenticatedGithubService = authenticatedGithubService;
+        this.environment = environment;
+        this.serviceProvider = serviceProvider;
     }
     #endregion
 
@@ -34,9 +38,14 @@ public class GithubProcessor : BaseWebhookProcessor
         await gitHubClient.Issue.Comment.Create(issuesEvent.Repository.Id, (int)issuesEvent.Issue.Number, "Thanks for creating an issue");
     }
 
-    public override Task ProcessWebhookAsync(IDictionary<string, StringValues> headers, string body)
+    public override async Task ProcessWebhookAsync(IDictionary<string, StringValues> headers, string body)
     {
-        return base.ProcessWebhookAsync(headers, body);
+        if (environment.IsProduction())
+        {
+            var devSocketService = serviceProvider.GetRequiredService<IDevSocketService>();
+            await devSocketService.SendToClients();
+        }
+        await base.ProcessWebhookAsync(headers, body);
     }
 
     public override Task ProcessWebhookAsync(WebhookHeaders headers, WebhookEvent webhookEvent)
