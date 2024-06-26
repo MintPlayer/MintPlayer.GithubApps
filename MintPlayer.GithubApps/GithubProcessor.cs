@@ -43,7 +43,7 @@ public class GithubProcessor : BaseWebhookProcessor
         if (environment.IsProduction())
         {
             var devSocketService = serviceProvider.GetRequiredService<IDevSocketService>();
-            await devSocketService.SendToClients();
+            await devSocketService.SendToClients(headers, body);
         }
         await base.ProcessWebhookAsync(headers, body);
     }
