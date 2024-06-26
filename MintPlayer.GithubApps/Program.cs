@@ -103,7 +103,7 @@ if (builder.Environment.IsProduction())
             return;
         }
 
-        using var ws = await context.WebSockets.AcceptWebSocketAsync();
+        using var ws = await context.WebSockets.AcceptWebSocketAsync("wss");
 
         var socketService = app.Services.GetRequiredService<IDevSocketService>();
         await socketService.NewSocketClient(new SocketClient(ws));
@@ -137,35 +137,45 @@ else if (builder.Environment.IsDevelopment())
     var url = builder.Configuration["WebhookProxy:ProductionWebsocketUrl"] ?? throw new InvalidDataException();
 
     var ws = new ClientWebSocket();
+    ws.Options.KeepAliveInterval = TimeSpan.FromSeconds(1);
     ws.Options.SetRequestHeader("Webhook-Proxy-Authorization", $"Basic: {username}; {password}");
     await ws.ConnectAsync(new Uri(url), CancellationToken.None);
 
-    //await Task.Run(async () =>
-    //{
-    //    var buffer = new byte[4096];
-    //    while (true)
-    //    {
-    //        var result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-    //        if (result.MessageType == WebSocketMessageType.Close) break;
-    //        var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+    await Task.Run(async () =>
+    {
+        var buffer = new byte[4096];
+        while (true)
+        {
+            WebSocketReceiveResult result;
+            byte[] fullMessage = [];
+
+            do
+            {
+                result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                fullMessage = fullMessage.Concat(buffer).ToArray();
+            }
+            while (!result.EndOfMessage);
+
+            if (result.MessageType == WebSocketMessageType.Close) break;
+
+            var message = Encoding.UTF8.GetString(fullMessage);
+
+            var split = message.Split("\r\n\r\n");
+            var headers = split[0].Split("\r\n")
+                .Select(h => h.Split(':'))
+                .ToDictionary(h => h[0].Trim(), h => new Microsoft.Extensions.Primitives.StringValues(h[1].Trim()));
+            var body = split[1];
 
 
-    //        var split = message.Split("\r\n\r\n");
-    //        var headers = split[0].Split("\r\n")
-    //            .Select(h => h.Split(':'))
-    //            .ToDictionary(h => h[0].Trim(), h => new Microsoft.Extensions.Primitives.StringValues(h[1].Trim()));
-    //        var body = split[1];
+            using var scope = app.Services.CreateScope();
+            var processor = scope.ServiceProvider.GetRequiredService<WebhookEventProcessor>();
 
-
-    //        using var scope = app.Services.CreateScope();
-    //        var processor = scope.ServiceProvider.GetRequiredService<WebhookEventProcessor>();
-
-    //        await processor.ProcessWebhookAsync(
-    //            headers,
-    //            body
-    //        );
-    //    }
-    //});
+            await processor.ProcessWebhookAsync(
+                headers,
+                body
+            );
+        }
+    });
 }
 
 app.Run();
