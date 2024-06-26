@@ -14,15 +14,15 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddBotFramework<TWebhookEventProcessor>(this WebApplicationBuilder builder)
         where TWebhookEventProcessor : WebhookEventProcessor //, IHasAuthenticatedGithubClient
     {
-        if (builder.Environment.IsDevelopment())
-        {
-            builder.Services.AddHostedService<SmeeWorker>();
-            builder.Services.AddSingleton<ISmeeClient>(provider =>
-            {
-                var options = provider.GetService<IOptions<BotOptions>>();
-                return new SmeeClient(new Uri(options?.Value.WebhookUrl ?? string.Empty));
-            });
-        }
+        //if (builder.Environment.IsDevelopment())
+        //{
+        //    builder.Services.AddHostedService<SmeeWorker>();
+        //    builder.Services.AddSingleton<ISmeeClient>(provider =>
+        //    {
+        //        var options = provider.GetService<IOptions<BotOptions>>();
+        //        return new SmeeClient(new Uri(options?.Value.WebhookUrl ?? string.Empty));
+        //    });
+        //}
 
         return builder.Services
             .AddTransient<ISignatureService, SignatureService>()
