@@ -78,7 +78,7 @@ if (builder.Environment.IsProduction())
             return;
         }
 
-        if (!context.Request.Headers.TryGetValue("Authorization", out var authorizationHeader))
+        if (!context.Request.Headers.TryGetValue("Webhook-Proxy-Authorization", out var authorizationHeader))
         {
             //context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             context.Response.StatusCode = 503;
@@ -137,7 +137,7 @@ else if (builder.Environment.IsDevelopment())
     var url = builder.Configuration["WebhookProxy:ProductionWebsocketUrl"] ?? throw new InvalidDataException();
 
     var ws = new ClientWebSocket();
-    ws.Options.SetRequestHeader("Authorization", $"Basic: {username}; {password}");
+    ws.Options.SetRequestHeader("Webhook-Proxy-Authorization", $"Basic: {username}; {password}");
     await ws.ConnectAsync(new Uri(url), CancellationToken.None);
 
     //await Task.Run(async () =>
