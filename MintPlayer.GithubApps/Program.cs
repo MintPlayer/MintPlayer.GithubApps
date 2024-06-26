@@ -73,20 +73,23 @@ if (builder.Environment.IsProduction())
     {
         if (!context.WebSockets.IsWebSocketRequest)
         {
-            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            //context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            context.Response.StatusCode = 502;
             return;
         }
 
         if (!context.Request.Headers.TryGetValue("Authorization", out var authorizationHeader))
         {
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            //context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            context.Response.StatusCode = 503;
             return;
         }
 
         var match = Regexes.authorizationRegex().Match(authorizationHeader[0] ?? string.Empty);
         if (!match.Success)
         {
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            //context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            context.Response.StatusCode = 504;
             return;
         }
 
@@ -95,7 +98,8 @@ if (builder.Environment.IsProduction())
 
         if (match.Groups["username"].Value != proxyUser || match.Groups["password"].Value != proxyPassword)
         {
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            //context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            context.Response.StatusCode = 505;
             return;
         }
 
