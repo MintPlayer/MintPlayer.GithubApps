@@ -79,11 +79,11 @@ if (builder.Environment.IsProduction())
 
         // Receive handshake
         var handshake = await ws.ReadObject<Handshake>();
-        if (handshake.Username != proxyUser || handshake.Password != proxyPassword)
-        {
-            await ws.CloseAsync(WebSocketCloseStatus.InternalServerError, "Wrong credentials", CancellationToken.None);
-            return;
-        }
+        //if (handshake.Username != proxyUser || handshake.Password != proxyPassword)
+        //{
+        //    await ws.CloseAsync(WebSocketCloseStatus.InternalServerError, "Wrong credentials", CancellationToken.None);
+        //    return;
+        //}
 
         var socketService = app.Services.GetRequiredService<IDevSocketService>();
         await socketService.NewSocketClient(new SocketClient(ws));
