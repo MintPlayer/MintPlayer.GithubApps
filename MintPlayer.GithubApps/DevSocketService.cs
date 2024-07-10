@@ -32,13 +32,17 @@ public class DevSocketService : IDevSocketService
 
             {body}
             """;
-        var bytes = Encoding.UTF8.GetBytes(payload);
-        var arraySegment = new ArraySegment<byte>(bytes, 0, bytes.Length);
 
-        foreach (var client in clients.Where(c => c.WebSocket.State == WebSocketState.Open))
-        {
-            await client.WebSocket.SendAsync(arraySegment, WebSocketMessageType.Text, true, CancellationToken.None);
-        }
+        await Task.WhenAll(clients.Where(c => c.WebSocket.State == WebSocketState.Open).Select(c => c.SendMessage(payload)));
+
+        //var bytes = Encoding.UTF8.GetBytes(payload);
+        //var arraySegment = new ArraySegment<byte>(bytes, 0, bytes.Length);
+
+        //foreach (var client in clients.Where(c => c.WebSocket.State == WebSocketState.Open))
+        //{
+        //    //await client.WebSocket.SendAsync(arraySegment, WebSocketMessageType.Text, true, CancellationToken.None);
+        //    await client.SendMessage(payload);
+        //}
     }
 }
 
@@ -47,4 +51,19 @@ public class SocketClient
     public SocketClient(WebSocket webSocket) => WebSocket = webSocket;
 
     public WebSocket WebSocket { get; }
+
+    public async Task SendMessage(string message)
+    {
+        switch (WebSocket.State)
+        {
+            case WebSocketState.Open:
+                var bytes = Encoding.UTF8.GetBytes(message);
+                var arraySegment = new ArraySegment<byte>(bytes, 0, bytes.Length);
+                await WebSocket.SendAsync(arraySegment, WebSocketMessageType.Text, true, CancellationToken.None);
+                break;
+            case WebSocketState.Closed:
+            case WebSocketState.Aborted:
+                throw new WebSocketException("The websocket was closed");
+        }
+    }
 }

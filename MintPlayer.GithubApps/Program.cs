@@ -73,23 +73,23 @@ if (builder.Environment.IsProduction())
     {
         if (!context.WebSockets.IsWebSocketRequest)
         {
-            //context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            context.Response.StatusCode = 502;
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            //context.Response.StatusCode = 502;
             return;
         }
 
         if (!context.Request.Headers.TryGetValue("Webhook-Proxy-Authorization", out var authorizationHeader))
         {
-            //context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            context.Response.StatusCode = 503;
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            //context.Response.StatusCode = 503;
             return;
         }
 
         var match = Regexes.authorizationRegex().Match(authorizationHeader[0] ?? string.Empty);
         if (!match.Success)
         {
-            //context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            context.Response.StatusCode = 504;
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            //context.Response.StatusCode = 504;
             return;
         }
 
@@ -98,8 +98,8 @@ if (builder.Environment.IsProduction())
 
         if (match.Groups["username"].Value != proxyUser || match.Groups["password"].Value != proxyPassword)
         {
-            //context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            context.Response.StatusCode = 505;
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            //context.Response.StatusCode = 505;
             return;
         }
 
@@ -107,27 +107,6 @@ if (builder.Environment.IsProduction())
 
         var socketService = app.Services.GetRequiredService<IDevSocketService>();
         await socketService.NewSocketClient(new SocketClient(ws));
-
-        //var message = "Hello World!";
-        //var bytes = Encoding.UTF8.GetBytes(message);
-
-        //var working = true;
-        //while (working)
-        //{
-        //    switch (ws.State)
-        //    {
-        //        case WebSocketState.Open:
-        //            var arraySegment = new ArraySegment<byte>(bytes, 0, bytes.Length);
-        //            await ws.SendAsync(arraySegment, WebSocketMessageType.Text, true, CancellationToken.None);
-        //            break;
-        //        case WebSocketState.Closed:
-        //        case WebSocketState.Aborted:
-        //            working = false;
-        //            break;
-        //    }
-
-        //    await Task.Delay(1000);
-        //}
     });
 }
 else if (builder.Environment.IsDevelopment())
@@ -139,11 +118,12 @@ else if (builder.Environment.IsDevelopment())
     var ws = new ClientWebSocket();
     ws.Options.KeepAliveInterval = TimeSpan.FromSeconds(1);
     ws.Options.SetRequestHeader("Webhook-Proxy-Authorization", $"Basic: {username}; {password}");
+    ws.Options.AddSubProtocol("wss");
     await ws.ConnectAsync(new Uri(url), CancellationToken.None);
 
     await Task.Run(async () =>
     {
-        var buffer = new byte[4096];
+        var buffer = new byte[512];
         while (true)
         {
             WebSocketReceiveResult result;
