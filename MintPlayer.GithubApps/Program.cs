@@ -1,14 +1,9 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using MintPlayer.AspNetCore.BotFramework;
 using MintPlayer.AspNetCore.BotFramework.Extensions;
 using MintPlayer.AspNetCore.LoggerProviders;
 using MintPlayer.GithubApps;
+using Newtonsoft.Json;
 using Octokit.Webhooks;
-using Octokit.Webhooks.AspNetCore;
-using Smee.IO.Client;
-using System.Net;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -74,36 +69,21 @@ if (builder.Environment.IsProduction())
         if (!context.WebSockets.IsWebSocketRequest)
         {
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            //context.Response.StatusCode = 502;
-            return;
-        }
-
-        if (!context.Request.Headers.TryGetValue("Webhook-Proxy-Authorization", out var authorizationHeader))
-        {
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            //context.Response.StatusCode = 503;
-            return;
-        }
-
-        var match = Regexes.authorizationRegex().Match(authorizationHeader[0] ?? string.Empty);
-        if (!match.Success)
-        {
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            //context.Response.StatusCode = 504;
             return;
         }
 
         var proxyUser = builder.Configuration["WebhookProxy:Username"];
         var proxyPassword = builder.Configuration["WebhookProxy:Password"];
 
-        if (match.Groups["username"].Value != proxyUser || match.Groups["password"].Value != proxyPassword)
+        using var ws = await context.WebSockets.AcceptWebSocketAsync("wss");
+
+        // Receive handshake
+        var handshake = await ws.ReadObject<Handshake>();
+        if (handshake.Username != proxyUser || handshake.Password != proxyPassword)
         {
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            //context.Response.StatusCode = 505;
+            await ws.CloseAsync(WebSocketCloseStatus.InternalServerError, "Wrong credentials", CancellationToken.None);
             return;
         }
-
-        using var ws = await context.WebSockets.AcceptWebSocketAsync("wss");
 
         var socketService = app.Services.GetRequiredService<IDevSocketService>();
         await socketService.NewSocketClient(new SocketClient(ws));
@@ -117,28 +97,23 @@ else if (builder.Environment.IsDevelopment())
 
     var ws = new ClientWebSocket();
     ws.Options.KeepAliveInterval = TimeSpan.FromSeconds(1);
-    ws.Options.SetRequestHeader("Webhook-Proxy-Authorization", $"Basic: {username}; {password}");
+    ws.Options.AddSubProtocol("ws");
     ws.Options.AddSubProtocol("wss");
     await ws.ConnectAsync(new Uri(url), CancellationToken.None);
 
     await Task.Run(async () =>
     {
+        var handshake = new Handshake
+        {
+            Username = username,
+            Password = password,
+        };
+        await ws.WriteObject(handshake);
+
         var buffer = new byte[512];
         while (true)
         {
-            WebSocketReceiveResult result;
-            byte[] fullMessage = [];
-
-            do
-            {
-                result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-                fullMessage = fullMessage.Concat(buffer).ToArray();
-            }
-            while (!result.EndOfMessage);
-
-            if (result.MessageType == WebSocketMessageType.Close) break;
-
-            var message = Encoding.UTF8.GetString(fullMessage);
+            var message = await ws.ReadMessage();
 
             var split = message.Split("\r\n\r\n");
             var headers = split[0].Split("\r\n")
@@ -164,4 +139,54 @@ static partial class Regexes
 {
     [GeneratedRegex(@"Basic:\s*(?<username>.+?)\s*\;\s*(?<password>.+)$")]
     public static partial Regex authorizationRegex();
+}
+
+class Handshake
+{
+    public string? Username { get; set; }
+    public string? Password { get; set; }
+}
+
+static class SocketExtensions
+{
+    public static async Task<string> ReadMessage(this WebSocket ws)
+    {
+        var buffer = new byte[512];
+        byte[] fullMessage = [];
+        WebSocketReceiveResult result;
+
+        do
+        {
+            result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+            fullMessage = fullMessage.Concat(buffer).ToArray();
+        }
+        while (!result.EndOfMessage);
+
+        if (result.MessageType == WebSocketMessageType.Close)
+        {
+            throw new WebSocketException("The websocket was closed");
+        }
+
+        var message = Encoding.UTF8.GetString(fullMessage);
+        return message;
+    }
+
+    public static async Task WriteMessage(this WebSocket ws, string message)
+    {
+        var bytes = Encoding.UTF8.GetBytes(message);
+        await ws.SendAsync(bytes, WebSocketMessageType.Text, true, CancellationToken.None);
+    }
+
+    public static async Task<T> ReadObject<T>(this WebSocket ws)
+    {
+        var message = await ws.ReadMessage();
+        var obj = JsonConvert.DeserializeObject<T>(message);
+        return obj;
+    }
+
+    public static async Task WriteObject<T>(this WebSocket ws, T obj)
+    {
+        var json = JsonConvert.SerializeObject(obj);
+        await ws.WriteMessage(json);
+    }
 }
